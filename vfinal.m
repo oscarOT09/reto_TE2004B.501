@@ -8,12 +8,14 @@ foregroundDetector = vision.ForegroundDetector('NumGaussians', 5, ...
                                                'MinimumBackgroundRatio', 0.7);
 prev_x = 0;
 prev_y = 0;
-k_v = 13;
 
-velocidades=[];
+pre = [0 0];
+k_v = 6.25;
+
+vel_vector=[];
 
 %% A. Video Input
-videoSource  = VideoReader("prueba03_1.mp4");
+videoSource  = VideoReader("emmanuel_10_1.mp4");
 centroides_x = [];
 fps = videoSource.FrameRate;
 while hasFrame(videoSource)
@@ -36,7 +38,6 @@ while hasFrame(videoSource)
     %% F. Operaciones morfológicas para eliminar ruido
     img_morfo = imopen(img_suav, strel('square', 15));
     img_morfo = imclose(img_morfo, strel('square', 30));
-    imshow(img_morfo);
 
     %
     %% G. Object detection
@@ -67,15 +68,17 @@ while hasFrame(videoSource)
             
             %fprintf('Objeto %d: Centroide en (x, y) = (%.2f, %.2f)\n', i, centroide(1), centroide(2));
             %centroides_x = [centroides_x; centroide(1)];
-    
-            d = sqrt((centroide(1) - prev_x)^2 + (centroide(2) - prev_y)^2);
+            
+            %% I. Speed Estimation
+            d = sqrt(sum((pre-centroide).^2));
             d = d*0.001;
             v = k_v*(d/(1/fps));
-            v = v*3.6;
-            prev_x = centroide(1);
-            prev_y = centroide(2);
+            v = 3.6*v;
+
+            pre(1) = centroide(1);
+            pre(2) = centroide(2);
             %fprintf('Velocidad: %.2f\n', v)
-            velocidades = [velocidades,v];
+            vel_vector = [vel_vector,v];
         end
         
     end
@@ -87,6 +90,6 @@ end
 %figure
 %plot(centroides_x)
 figure
-velocidades(1) = [];
-stem(velocidades)
-fprintf('Velocidad del objeto: %.2f\n', mean(velocidades))
+vel_vector(1) = [];
+stem(vel_vector)
+fprintf('Velocidad del objeto: %.2f\n', mean(vel_vector))
