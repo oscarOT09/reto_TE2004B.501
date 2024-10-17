@@ -2,22 +2,28 @@ clc
 clear all
 close all
 
+%% 0. Definición de constantes, objetos y variables
+Tv = 90; % Ángulo
+H = 1.7; % Altura de la cámara en m
+v = 0.012; %% Dimensión vertical del formato de imagen
+f = 0.003; % Distancia focal de la cámara (8-25)
+
+Tc = 2*atan(v/(2*f));
+T = Tv + Tc/2;
+D = H*tan(T);
+P = 2*tan(Tc/2)*sqrt(H^2+D^2);
+I_height = 1080; % Alto en pixeles de la imagen
+k = P / I_height;
+
 foregroundDetector = vision.ForegroundDetector('NumGaussians', 5, ...
                                                'NumTrainingFrames', 40, ...
                                                'LearningRate', 0.005, ...
                                                'MinimumBackgroundRatio', 0.7);
-prev_x = 0;
-prev_y = 0;
-
-pre = [0 0];
-k_v = 6.25;
-
-vel_vector=[];
 
 %% A. Video Input
-videoSource  = VideoReader("emmanuel_10_1.mp4");
-centroides_x = [];
+videoSource  = VideoReader("oscar_20_1.mp4");
 fps = videoSource.FrameRate;
+
 while hasFrame(videoSource)
     %% B. Preprocessing
     img  = readFrame(videoSource); 
@@ -66,21 +72,24 @@ while hasFrame(videoSource)
             % Dibujar el centroide
             plot(centroide(1), centroide(2), 'rx', 'MarkerSize', 10, 'LineWidth', 2);
             
-            %fprintf('Objeto %d: Centroide en (x, y) = (%.2f, %.2f)\n', i, centroide(1), centroide(2));
-            %centroides_x = [centroides_x; centroide(1)];
-            
             %% I. Speed Estimation
             d = sqrt(sum((pre-centroide).^2));
-            d = d*0.001;
-            v = k_v*(d/(1/fps));
+            v = k*(d/(1/fps));
             v = 3.6*v;
 
             pre(1) = centroide(1);
             pre(2) = centroide(2);
-            %fprintf('Velocidad: %.2f\n', v)
             vel_vector = [vel_vector,v];
+
+            % Obtener la posición del texto (encima del rectángulo)
+            pos_x = bbox(1); % Coordenada X del rectángulo
+            pos_y = bbox(2) - 10; % Coordenada Y ligeramente encima del rectángulo
+
+            % Mostrar la velocidad encima del objeto con fondo
+            texto_vel = sprintf('Vel: %.2f km/h', v);
+            text(pos_x, pos_y, texto_vel, 'Color', 'yellow', 'FontSize', 12, 'FontWeight', 'bold', ...
+                 'BackgroundColor', 'black', 'EdgeColor', 'yellow', 'Margin', 3);
         end
-        
     end
     
     hold off;
@@ -89,7 +98,7 @@ end
 
 %figure
 %plot(centroides_x)
-figure
+%figure
 vel_vector(1) = [];
-stem(vel_vector)
+%stem(vel_vector)
 fprintf('Velocidad del objeto: %.2f\n', mean(vel_vector))
