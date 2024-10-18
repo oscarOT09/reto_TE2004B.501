@@ -15,7 +15,7 @@ close all
 Tv = 90; % Ángulo
 H = 1.7; % Altura de la cámara en m
 v = 0.012; %% Dimensión vertical del formato de imagen
-f = 0.003; % Distancia focal de la cámara (8-25)
+f = 0.003; % Distancia focal de la cámara
 
 foregroundDetector = vision.ForegroundDetector('NumGaussians', 5, ...
                                                'NumTrainingFrames', 40, ...
@@ -35,6 +35,11 @@ D = H*tan(T); % Distancia de la cámara al objeto
 P = 2*tan(Tc/2)*sqrt(H^2+D^2); % Proyección del campo de visión (en metros)
 I_height = videoFuente.Height; % Altura del video en pixeles
 k = P / I_height; % Factor de conversión de pixeles a metros
+
+% Creación del video de salida
+videoSalida = VideoWriter('prueba_rojo20.mp4', 'MPEG-4');
+videoSalida.FrameRate = fps;
+open(videoSalida); % Abrir el archivo de video para escribir
 
 while hasFrame(videoFuente)
     %% B. Preprocessing
@@ -100,6 +105,10 @@ while hasFrame(videoFuente)
     
     hold off;
     drawnow; % Actualización el gráfico en cada iteración
+    
+    % Escritura del frame procesado en el video de salida
+    frame = getframe(gca);
+    writeVideo(videoSalida, frame);
 end
 
 vel_vector(1) = []; % Eliminación de la primera muestra
@@ -108,3 +117,8 @@ vel_vector(1) = []; % Eliminación de la primera muestra
 texto_velf = sprintf('Velocidad del objeto: %.2f km/h', mean(vel_vector));
 text(10, 30, texto_velf, 'Color', 'blue', 'FontSize', 12, 'FontWeight', 'bold', ...
                  'BackgroundColor', 'yellow');
+
+% Escritura del frame final
+frame = getframe(gca);
+writeVideo(videoSalida, frame);
+close(videoSalida);
